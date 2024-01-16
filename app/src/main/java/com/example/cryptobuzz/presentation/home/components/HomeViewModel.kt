@@ -1,6 +1,5 @@
 package com.example.cryptobuzz.presentation.home.components
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cryptobuzz.data.remote.dto.CryptoDetailsListingDTO
@@ -25,15 +24,6 @@ class HomeViewModel @Inject constructor(
     private val cryptoRepository: CryptoRepository
 ) : ViewModel() {
 
-    /*
-        private val _cryptoPriceListing: MutableStateFlow<Response<CryptoPriceListingDTO>> =
-            MutableStateFlow(Response.Loading())
-
-        private val _cryptoDetailListing: MutableStateFlow<Response<CryptoDetailsListingDTO>> =
-            MutableStateFlow(Response.Loading())
-    */
-
-    private val lastUpdated: MutableStateFlow<Long> = MutableStateFlow(System.currentTimeMillis())
     private var fetchCurrencyJob:Job?= null
 
     private val _cryptoListState = MutableStateFlow(CryptoListState())
@@ -45,54 +35,55 @@ class HomeViewModel @Inject constructor(
                 cryptoRepository.getCryptoPriceListing(),
                 cryptoRepository.getCryptoDetailsListing()
             ) { priceListResponse, detailsListResponse ->
-                processResponses(priceListResponse, detailsListResponse)
+                handleResponse(priceListResponse, detailsListResponse)
             }.collectLatest { cryptoList ->
                 _cryptoListState.update { cryptoList }
             }
         }
     }
 
-    private fun processResponses(
+    private fun handleResponse(
         priceListResponse: Response<CryptoPriceListingDTO>,
         detailsListResponse: Response<CryptoDetailsListingDTO>
     ): CryptoListState {
         return when {
 
-            priceListResponse is Response.Error ->
+            priceListResponse is Response.Error -> {
                 CryptoListState(
                     isLoading = false,
                     error = priceListResponse.message
                 )
+            }
 
-            detailsListResponse is Response.Error ->
+            detailsListResponse is Response.Error -> {
                 CryptoListState(
                     isLoading = false,
                     error = detailsListResponse.message
                 )
+            }
 
-            priceListResponse is Response.Loading ||
-                    detailsListResponse is Response.Loading ->
+            priceListResponse is Response.Loading || detailsListResponse is Response.Loading -> {
                 CryptoListState(isLoading = true)
+            }
 
-            priceListResponse is Response.Success &&
-                    detailsListResponse is Response.Success -> {
-                val result = mapCryptoData(priceListResponse.data, detailsListResponse.data)
+            priceListResponse is Response.Success && detailsListResponse is Response.Success -> {
+
+                val result = mapResponsesToCryptoList(priceListResponse.data, detailsListResponse.data)
                 CryptoListState(
                     isLoading = false,
                     error = "",
                     cryptoList = result,
                     lastUpdated = System.currentTimeMillis()
                 )
+
             }
 
-            else -> {
-                CryptoListState()
-            }
+            else -> { CryptoListState() }
         }
     }
 
 
-    private fun mapCryptoData(
+    private fun mapResponsesToCryptoList(
         priceData: CryptoPriceListingDTO?,
         detailsData: CryptoDetailsListingDTO?
     ): List<CryptoCurrency> {

@@ -1,6 +1,10 @@
 package com.example.cryptobuzz.presentation.home.screen
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,8 +24,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ShapeDefaults
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -36,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.cryptobuzz.R
+import com.example.cryptobuzz.domain.model.CryptoCurrency
 import com.example.cryptobuzz.presentation.home.components.CryptoListState
 import com.example.cryptobuzz.presentation.pull_to_refresh.PullToRefreshLayout
 import com.example.cryptobuzz.presentation.pull_to_refresh.PullToRefreshLayoutState
@@ -53,8 +56,7 @@ fun HomeScreen(
 
         PullToRefreshLayout(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
+                .fillMaxSize(),
             pullRefreshLayoutState = pullToRefreshState,
             onRefresh = onRefresh,
         ) {
@@ -74,125 +76,149 @@ fun HomeScreen(
 fun HomeScreenContent(
     modifier: Modifier = Modifier,
     cryptoListState: CryptoListState,
-    onRefresh:()->Unit
+    onRefresh: () -> Unit
 ) {
-    val context = LocalContext.current
 
     Column(modifier = modifier) {
 
-        AnimatedVisibility(visible = cryptoListState.isLoading) {
+        AnimatedContent(
+            targetState = cryptoListState,
+            label = "home screen",
+            transitionSpec = {
+                (fadeIn() + slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Down))
+                    .togetherWith(
+                        fadeOut() + slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down)
+                    )
+            }
+        ) { state ->
+            when {
+                state.error.isNotEmpty() -> {
+                    ErrorScreen(
+                        errorMessage = state.error,
+                        onClick = onRefresh
+                    )
+                }
 
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(6) { _ ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(80.dp)
-                                .padding(12.dp)
-                                .placeholder(
-                                    isLoading = cryptoListState.isLoading,
-                                )
-                                .clip(ShapeDefaults.Medium)
+                state.isLoading -> {
+                    LoadingScreen()
+                }
 
-                        )
-
-                        Text(
-                            text = "This is a demo text for shimmer",
-                            style = MaterialTheme.typography.titleSmall,
-                            modifier = Modifier
-                                .padding(horizontal = 8.dp)
-                                .placeholder(
-                                    isLoading = cryptoListState.isLoading
-                                )
-                                .clip(ShapeDefaults.Medium)
-                        )
-
-                        Text(
-                            text = "Demo text",
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier
-                                .padding(start = 8.dp)
-                                .placeholder(
-                                    isLoading = cryptoListState.isLoading
-                                )
-                                .clip(ShapeDefaults.Medium)
-                        )
-                    }
-
-                    /*                HorizontalDivider(
-                                        Modifier.padding(
-                                            vertical = 8.dp,
-                                            horizontal = 16.dp
-                                        )
-                                    )*/
+                else -> {
+                    CryptoListScreen(cryptoList = state.cryptoList)
                 }
             }
         }
 
-        AnimatedVisibility(visible = cryptoListState.error.isNotEmpty()) {
-            ErrorScreen(
-                errorMessage = cryptoListState.error,
-                onClick = onRefresh
+    }
+}
+
+@Composable
+fun CryptoListScreen(
+    cryptoList: List<CryptoCurrency>
+) {
+
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        items(cryptoList) { cryptoCurrency ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AsyncImage(
+                    model = ImageRequest
+                        .Builder(LocalContext.current)
+                        .data(cryptoCurrency.imageUrl)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = "thumbnail",
+                    modifier = Modifier
+                        .size(80.dp)
+                        .padding(12.dp),
+                    contentScale = ContentScale.Fit
+                )
+
+                Text(
+                    text = cryptoCurrency.fullName,
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.padding(12.dp)
+                )
+
+                Text(
+                    text = "₹ ${cryptoCurrency.price}",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+
+            HorizontalDivider(
+                Modifier.padding(
+                    vertical = 8.dp,
+                    horizontal = 16.dp
+                )
             )
         }
+    }
 
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(cryptoListState.cryptoList) { cryptoCurrency ->
-                Row(
+}
+
+@Composable
+fun LoadingScreen(
+    itemCount: Int = 6
+) {
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        items(itemCount) { _ ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    AsyncImage(
-                        model = ImageRequest
-                            .Builder(context)
-                            .data(cryptoCurrency.imageUrl)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = "thumbnail",
-                        modifier = Modifier
-                            .size(80.dp)
-                            .padding(12.dp),
-                        contentScale = ContentScale.Fit
-                    )
-
-                    Text(
-                        text = cryptoCurrency.fullName,
-                        style = MaterialTheme.typography.titleSmall,
-
+                        .size(80.dp)
+                        .padding(12.dp)
+                        .placeholder(
+                            isLoading = true,
+                            showShimmerAnimation = true
                         )
+                        .clip(ShapeDefaults.Medium)
 
-                    Text(
-                        text = "₹ ${cryptoCurrency.price}",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
+                )
 
-                HorizontalDivider(
-                    Modifier.padding(
-                        vertical = 8.dp,
-                        horizontal = 16.dp
-                    )
+                Text(
+                    text = "demo text for shimmer",
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp)
+                        .placeholder(
+                            isLoading = true,
+                            showShimmerAnimation = true
+                        )
+                        .clip(ShapeDefaults.Medium)
+                )
+
+                Text(
+                    text = "Demo",
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier
+                        .padding(start = 8.dp)
+                        .placeholder(
+                            isLoading = true,
+                            showShimmerAnimation = true
+                        )
+                        .clip(ShapeDefaults.Medium)
                 )
             }
         }
     }
 }
 
-
-
 @Composable
 fun ErrorScreen(
     errorMessage: String,
-    onClick:()->Unit
+    onClick: () -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),

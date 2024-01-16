@@ -66,7 +66,8 @@ fun PullToRefreshLayout(
 
 class PullToRefreshLayoutState(
     val onTimeUpdated: (Long) -> String,
-) {
+)
+{
 
     private val _lastRefreshTime: MutableStateFlow<Long> = MutableStateFlow(System.currentTimeMillis())
 
@@ -92,7 +93,4 @@ class PullToRefreshLayoutState(
 @Composable
 fun rememberPullToRefreshState(
     onTimeUpdated: (Long) -> String,
-): PullToRefreshLayoutState =
-    remember {
-        PullToRefreshLayoutState(onTimeUpdated)
-    }
+): PullToRefreshLayoutState = remember { PullToRefreshLayoutState(onTimeUpdated) }

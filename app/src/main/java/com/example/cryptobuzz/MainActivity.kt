@@ -5,11 +5,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -19,7 +17,6 @@ import com.example.cryptobuzz.presentation.pull_to_refresh.RefreshIndicatorState
 import com.example.cryptobuzz.presentation.pull_to_refresh.rememberPullToRefreshState
 import com.example.cryptobuzz.presentation.utils.getTimePassedInMinSec
 import com.example.cryptobuzz.ui.theme.CryptoBuzzTheme
-import com.stevdzasan.messagebar.rememberMessageBarState
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -33,8 +30,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val snackbarHostState = remember { SnackbarHostState() }
-                    val messageBarState = rememberMessageBarState()
+
                     val homeViewModel: HomeViewModel = viewModel()
                     val cryptoState by homeViewModel.cryptoListState.collectAsStateWithLifecycle()
 

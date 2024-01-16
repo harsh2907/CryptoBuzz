@@ -42,7 +42,7 @@ private val LightColorScheme = lightColorScheme(
 fun CryptoBuzzTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -64,22 +64,27 @@ fun CryptoBuzzTheme(
         }
     }
 
-    SideEffect {
-        val window = (view.context as Activity).window
-        val color = if(darkTheme) Color.Black else Color.White
-
-        window.statusBarColor = color.toArgb()
-        window.navigationBarColor = color.toArgb()
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            window.isNavigationBarContrastEnforced = false
-        }
-
-        val windowsInsetsController = WindowCompat.getInsetsController(window, view)
-
-        windowsInsetsController.isAppearanceLightStatusBars = !darkTheme
-        windowsInsetsController.isAppearanceLightNavigationBars = !darkTheme
+    val backgroundColor = if (!isSystemInDarkTheme()) {
+        Color(red = 255, green = 251, blue = 254)
+    }else{
+        Color(red = 28, green = 27, blue = 31)
     }
+
+        SideEffect {
+            val window = (view.context as Activity).window
+
+            window.statusBarColor = backgroundColor.toArgb()
+            window.navigationBarColor = backgroundColor.toArgb()
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                window.isNavigationBarContrastEnforced = false
+            }
+
+            val windowsInsetsController = WindowCompat.getInsetsController(window, view)
+
+            windowsInsetsController.isAppearanceLightStatusBars = !darkTheme
+            windowsInsetsController.isAppearanceLightNavigationBars = !darkTheme
+        }
 
     MaterialTheme(
         colorScheme = colorScheme,
